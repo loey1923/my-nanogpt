@@ -82,7 +82,7 @@
 ### 神经网络基础概念
 
 <details>
-<summary>点击展开</summary>
+<summary>点击展开/收起</summary>
 
 #### 层级一：单个神经元的运作
 
@@ -303,4 +303,139 @@ batch 把以上过程并行化
 (B,T,C) 张量语义 + 广播 是并行化的数学表达方式
 ```
 
+</details>
+
+## **4.6**
+
+通过[micrograd](https://github.com/karpathy/micrograd)项目学习计算图与反向传播
+
+### micrograd
+
+<details>
+    <summary>点击展开/收起</summary>
+
+`engine.py`中定义的`Value`类是 Andrej Karpathy 编写的著名的 **micrograd**（微型自动求导引擎）的核心部分。它通过非常精简的代码实现了深度学习中最重要的概念：**计算图**与**反向传播（Backpropagation）**。
+
+下面分两部分详细拆解：
+
+---
+
+#### 第一部分：从数学层面理解反向传播
+
+##### 1. 什么是反向传播？
+反向传播本质上是微积分中 **链式法则（Chain Rule）** 在计算图（有向无环图）上的系统性应用。
+在机器学习中，我们通常有一个复杂的函数（比如神经网络），输入是数据和权重，输出是损失值（Loss）。我们想要知道：**每一个权重发生微小变化时，会对最终的损失值产生多大的影响？** 这个“影响的比例”就是**梯度（Gradient）**。
+
+链式法则告诉我们，如果 $y = f(u)$ 且 $u = g(x)$，那么 $y$ 对 $x$ 的导数为：
+$$ \frac{\partial y}{\partial x} = \frac{\partial y}{\partial u} \cdot \frac{\partial u}{\partial x} $$
+
+**大白话解释**：
+假设你想买一辆车（最终目标 $L$）。车的价格取决于铁矿石的价格（节点 $q$）。而铁矿石的价格又取决于挖掘机的租金（节点 $x$）。
+如果挖掘机租金涨了 1 块钱，铁矿石涨 2 块钱（局部导数 = 2）；铁矿石涨 1 块钱，车价涨 10 块钱（全局传回来的导数 = 10）。
+那么挖掘机租金涨 1 块钱，车价就会涨 $2 \times 10 = 20$ 块钱。这就是反向传播的过程：**从最终目标开始，一步步往前乘局部变化率**。
+
+##### 2. 举例说明
+假设我们有这样一个数学算式，并设定初始值 $x=2, y=-3, z=10$：
+$$ L = (x \cdot y + z)^2 $$
+
+**步骤1：前向传播（Forward Pass）——计算结果**
+我们将算式拆解为基本运算（对应代码中的 `Value` 节点）：
+1. $q = x \cdot y = 2 \times (-3) = -6$
+2. $p = q + z = -6 + 10 = 4$
+3. $L = p^2 = 4^2 = 16$
+
+**步骤2：反向传播（Backward Pass）——计算梯度**
+我们的目标是求 $\frac{\partial L}{\partial x}, \frac{\partial L}{\partial y}, \frac{\partial L}{\partial z}$。我们从后往前算：
+
+1. **从 L 自身开始**：
+   $$ \frac{\partial L}{\partial L} = 1 $$ （对应代码中 `self.grad = 1`）
+
+2. **经过平方运算求 $p$ 的梯度**（因为 $L = p^2$）：
+   局部导数 $\frac{\partial L}{\partial p} = 2p = 2 \times 4 = 8$
+   根据链式法则：$\frac{\partial L}{\partial p} = \frac{\partial L}{\partial p} \times \frac{\partial L}{\partial L} = 8 \times 1 = 8$
+
+3. **经过加法运算求 $q$ 和 $z$ 的梯度**（因为 $p = q + z$）：
+   加法的局部导数都是 1（即 $\frac{\partial p}{\partial q}=1, \frac{\partial p}{\partial z}=1$）。
+   根据链式法则，加法相当于把梯度 **原封不动地分配（路由）** 给两个输入：
+   $$ \frac{\partial L}{\partial q} = 1 \times \frac{\partial L}{\partial p} = 1 \times 8 = 8 $$
+   $$ \frac{\partial L}{\partial z} = 1 \times \frac{\partial L}{\partial p} = 1 \times 8 = 8 $$
+
+4. **经过乘法运算求 $x$ 和 $y$ 的梯度**（因为 $q = x \cdot y$）：
+   乘法的局部导数是互相交换的（即 $\frac{\partial q}{\partial x} = y, \frac{\partial q}{\partial y} = x$）。
+   $$ \frac{\partial L}{\partial x} = y \times \frac{\partial L}{\partial q} = -3 \times 8 = -24 $$
+   $$ \frac{\partial L}{\partial y} = x \times \frac{\partial L}{\partial q} = 2 \times 8 = 16 $$
+
+至此，我们就求出了所有输入的梯度！
+
+---
+
+#### 第二部分：从代码层面分析如何实现计算图与反向传播
+
+这段代码巧妙地将“数值计算”和“计算图构建”结合在了一起。我们逐块分析：
+
+##### 1. 核心数据结构：`Value` 节点
+每个 `Value` 实例既代表图中的一个**节点**，也记录了前向和后向的数据。
+*   `self.data`: 保存前向传播的计算结果（如上面的 16, 4, -6）。
+*   `self.grad`: 保存反向传播计算出的梯度（初始为 0）。
+*   `self._prev`: 保存生成这个节点的“父节点”（也就是输入的参数）。这就在代码层面把独立的节点**连接成了有向无环图（DAG）**。
+*   `self._backward`: 一个闭包函数（函数内部的函数），它知道**针对当前这个特定的运算符，应该如何应用链式法则计算输入节点的梯度**。
+
+##### 2. 前向传播与动态建图（以乘法 `__mul__` 为例）
+当我们执行 `c = a * b` 时，Python 会调用 `a.__mul__(b)`：
+```python
+def __mul__(self, other):
+    other = other if isinstance(other, Value) else Value(other) # 包装常量
+    out = Value(self.data * other.data, (self, other), '*')     # 1. 计算前向结果，2. 建立图连接 (self, other)
+
+    def _backward():
+        # 核心：链式法则 = 局部导数 * 全局传回的导数(out.grad)
+        # 如果 out = self * other
+        # 那么 d(out)/d(self) = other.data
+        # d(out)/d(other) = self.data
+        self.grad += other.data * out.grad 
+        other.grad += self.data * out.grad
+    out._backward = _backward # 将如何求导的逻辑挂载到输出节点上
+
+    return out
+```
+**注意为什么要用 `+=` 累加梯度？**
+因为在复杂的计算图中，一个变量可能被多处使用（比如 $y = x \cdot x$ 或者分叉到图的多个分支）。根据微元法中的多元链式法则，它的总梯度应该是所有使用了它的路径回传的**梯度之和**。
+
+##### 3. 反向传播引擎：`backward()` 函数
+当我们对最终结果（比如 Loss）调用 `L.backward()` 时，引擎开始运转。这里有两步：
+
+**第一步：拓扑排序（Topological Sort）**
+
+```python
+topo = []
+visited = set()
+def build_topo(v):
+    if v not in visited:
+        visited.add(v)
+        for child in v._prev:
+            build_topo(child) # 递归找父节点
+        topo.append(v)#子节点都遍历插入后再插入父节点，后序遍历
+build_topo(self)
+```
+**为什么需要拓扑排序？**
+在反向传播时，如果我们要计算节点 A 的梯度，我们必须**先确保所有依赖 A 的节点的梯度都已经计算完毕**。拓扑排序保证了所有节点的排列顺序是：**被依赖者在前，依赖者在后**。
+经过上面的递归调用后，`topo` 列表里存放的是从“输入起点”到“最终输出”的顺序。
+
+**第二步：反向链式调用**
+```python
+self.grad = 1 # 将最终输出对自己的导数设为 1（启动器）
+for v in reversed(topo): # 反转拓扑顺序，从后往前（从 Loss 向 Input）计算
+    v._backward()        # 触发前向传播时预定义的局部求导公式
+```
+遍历 `reversed(topo)` 意味着从最终输出节点开始，依次执行每个节点的 `_backward()` 函数，梯度就这样沿着 `_prev` 建立的图结构，像流水一样倒流（Backpropagate）回去了。
+
+##### 4. 代码的工程巧思（魔法方法）
+你会看到 `__sub__`, `__truediv__` 等方法并没有写复杂的 `_backward` 逻辑，而是直接复用了已有的算子：
+*   减法：`self - other` 被转化为 `self + (-other)`
+*   除法：`self / other` 被转化为 `self * (other ** -1)`
+这种设计极大地简化了代码，只要保证加法（`+`）、乘法（`*`）和幂运算（`**`）的导数逻辑正确，减法和除法的求导就会自然而然地通过现成的计算图得到正确结果。
+
+#### 总结
+这段代码的美妙之处在于：当我们用普通的 Python 语法写数学公式计算 Loss 时（前向传播），底层实际上在**悄悄地牵线搭桥（记录 `_prev`）并塞入说明书（记录 `_backward` 闭包）**，构建了一张庞大的有向计算图。当最后大喊一声 `backward()` 时，程序就沿着这张图逆流而上，把梯度完美地分配给了每一个初始变量。
+    
 </details>
