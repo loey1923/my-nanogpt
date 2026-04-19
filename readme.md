@@ -445,3 +445,9 @@ for v in reversed(topo): # 反转拓扑顺序，从后往前（从 Loss 向 Inpu
 这段代码的美妙之处在于：当我们用普通的 Python 语法写数学公式计算 Loss 时（前向传播），底层实际上在**悄悄地牵线搭桥（记录 `_prev`）并塞入说明书（记录 `_backward` 闭包）**，构建了一张庞大的有向计算图。当最后大喊一声 `backward()` 时，程序就沿着这张图逆流而上，把梯度完美地分配给了每一个初始变量。
     
 </details>
+
+## **4.19**
+
+### 代码基础
+掌握[简单Numpy、Pytorch、Pandas基础](https://htmlpreview.github.io/?https://github.com/loey1923/my-nanogpt/blob/main/numpy_pytorch_pandas_guide.html)
+

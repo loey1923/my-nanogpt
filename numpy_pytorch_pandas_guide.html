@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NumPy · PyTorch · Pandas 新手入门指南</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<style>
+  /* ── GitHub design tokens ── */
+  :root {
+    --color-canvas-default: #ffffff;
+    --color-canvas-subtle:  #f6f8fa;
+    --color-border-default: #d0d7de;
+    --color-border-muted:   #d8dee4;
+    --color-fg-default:     #24292f;
+    --color-fg-muted:       #57606a;
+    --color-fg-subtle:      #6e7781;
+    --color-accent-fg:      #0969da;
+    --color-accent-subtle:  #ddf4ff;
+    --color-success-fg:     #1a7f37;
+    --color-attention-fg:   #9a6700;
+    --color-danger-fg:      #cf222e;
+    --color-neutral-subtle: #eaeef2;
+    --color-numpy:          #013243;
+    --color-pytorch:        #ee4c2c;
+    --color-pandas:         #150458;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --sidebar-width: 260px;
+    --content-max: 860px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-fg-default);
+    background: var(--color-canvas-default);
+  }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width); overflow-y: auto;
+    background: var(--color-canvas-subtle);
+    border-right: 1px solid var(--color-border-default);
+    padding: 16px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-muted) transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--color-border-muted); border-radius: 4px; }
+
+  .toc-section-label {
+    font-size: 11px; font-weight: 600; color: var(--color-fg-subtle);
+    text-transform: uppercase; letter-spacing: .8px;
+    padding: 8px 16px 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .toc-section-label::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .toc-section-label.numpy::before  { background: #4fc3f7; }
+  .toc-section-label.pytorch::before{ background: #ff7043; }
+  .toc-section-label.pandas::before { background: #ce93d8; }
+  .toc-section-label.misc::before   { background: #66bb6a; }
+
+  .toc-link {
+    display: block; padding: 3px 16px 3px 28px;
+    color: var(--color-fg-muted); font-size: 13px;
+    text-decoration: none; border-left: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .toc-link:hover { color: var(--color-accent-fg); background: var(--color-neutral-subtle); }
+  .toc-link.active {
+    color: var(--color-accent-fg); font-weight: 600;
+    border-left-color: var(--color-accent-fg);
+    background: #ddf4ff44;
+  }
+  .toc-divider { border: none; border-top: 1px solid var(--color-border-muted); margin: 8px 16px; }
+
+  /* ── Main content ── */
+  .main {
+    margin-left: var(--sidebar-width);
+    flex: 1; padding: 32px 40px 80px;
+    max-width: calc(var(--sidebar-width) + var(--content-max));
+  }
+  .content { max-width: var(--content-max); }
+
+  /* ── Title block ── */
+  .doc-title {
+    font-size: 32px; font-weight: 700; line-height: 1.25;
+    color: var(--color-fg-default); margin-bottom: 8px;
+  }
+  .doc-subtitle { color: var(--color-fg-muted); font-size: 16px; margin-bottom: 20px; }
+  .doc-meta {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding-bottom: 20px; border-bottom: 1px solid var(--color-border-default);
+    margin-bottom: 28px;
+  }
+  .meta-tag {
+    font-size: 12px; padding: 2px 8px; border-radius: 20px;
+    font-weight: 500; border: 1px solid var(--color-border-default);
+    color: var(--color-fg-muted);
+  }
+
+  /* ── Section headings ── */
+  .part-heading {
+    margin: 48px 0 20px;
+    padding: 14px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border-default);
+    display: flex; align-items: center; gap: 12px;
+    scroll-margin-top: 20px;
+  }
+  .part-heading.numpy  { background: #e8f4f8; border-color: #b3d9e8; }
+  .part-heading.pytorch{ background: #fff3f0; border-color: #ffcbbd; }
+  .part-heading.pandas { background: #f3efff; border-color: #c9bbf0; }
+  .part-heading.misc   { background: #f0fff4; border-color: #b5e8c2; }
+  .part-icon { font-size: 22px; }
+  .part-heading h2 { font-size: 20px; font-weight: 700; }
+  .part-heading small { font-size: 13px; color: var(--color-fg-muted); font-weight: 400; display: block; margin-top: 2px; }
+
+  h3 {
+    font-size: 16px; font-weight: 600; margin: 28px 0 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--color-border-muted);
+    scroll-margin-top: 20px; color: var(--color-fg-default);
+    display: flex; align-items: center; gap: 8px;
+  }
+  h3::before { content: '#'; color: var(--color-fg-subtle); font-weight: 400; }
+  h4 {
+    font-size: 14px; font-weight: 600; margin: 20px 0 8px;
+    color: var(--color-fg-default); scroll-margin-top: 20px;
+  }
+
+  p { margin-bottom: 12px; color: var(--color-fg-default); line-height: 1.65; }
+
+  /* ── Code blocks ── */
+  .code-block-wrap {
+    background: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px; overflow: hidden; margin: 14px 0;
+  }
+  .code-block-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 14px; border-bottom: 1px solid var(--color-border-default);
+    background: #f0f2f4;
+  }
+  .code-block-header span { font-size: 12px; color: var(--color-fg-muted); font-family: var(--font-mono); }
+  .copy-btn {
+    background: none; border: 1px solid var(--color-border-default);
+    border-radius: 4px; padding: 2px 8px; font-size: 11px;
+    color: var(--color-fg-muted); cursor: pointer; font-family: var(--font-sans);
+    transition: all .15s;
+  }
+  .copy-btn:hover { background: var(--color-neutral-subtle); color: var(--color-fg-default); }
+  .copy-btn.copied { color: var(--color-success-fg); border-color: var(--color-success-fg); }
+  pre { margin: 0; }
+  pre code { font-size: 13px !important; font-family: var(--font-mono); padding: 14px 16px !important; display: block; overflow-x: auto; }
+
+  /* Inline code */
+  code:not(pre code) {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--color-neutral-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 4px; padding: 1px 5px;
+    color: #953800;
+  }
+
+  /* ── Alert boxes ── */
+  .alert {
+    border-radius: 6px; padding: 12px 16px; margin: 14px 0;
+    border-left: 4px solid; font-size: 13px; line-height: 1.55;
+  }
+  .alert.tip    { border-color: #1a7f37; background: #dafbe1; color: #1a4731; }
+  .alert.warn   { border-color: #9a6700; background: #fff8c5; color: #4d3800; }
+  .alert.info   { border-color: #0969da; background: #ddf4ff; color: #0a3069; }
+  .alert.danger { border-color: #cf222e; background: #ffebe9; color: #67060c; }
+  .alert strong { font-weight: 600; }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--color-canvas-subtle); font-weight: 600;
+    padding: 8px 12px; text-align: left;
+    border: 1px solid var(--color-border-default);
+    white-space: nowrap;
+  }
+  td {
+    padding: 7px 12px; border: 1px solid var(--color-border-default);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafbfc; }
+  td code:not(pre code) { white-space: nowrap; }
+
+  /* ── Attribute cards ── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 14px 0; }
+  .attr-card {
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px; padding: 10px 12px;
+    background: var(--color-canvas-subtle);
+  }
+  .attr-card code { font-size: 12px; color: var(--color-accent-fg); background: none; border: none; padding: 0; }
+  .attr-card p { font-size: 12px; color: var(--color-fg-muted); margin: 4px 0 0; }
+
+  /* ── Function reference list ── */
+  .fn-list { list-style: none; margin: 10px 0; }
+  .fn-list li {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 5px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+  }
+  .fn-list li:last-child { border-bottom: none; }
+  .fn-tag { font-family: var(--font-mono); font-size: 12px; color: var(--color-accent-fg); flex-shrink: 0; }
+  .fn-desc { color: var(--color-fg-muted); }
+
+  /* ── Recipe cards ── */
+  .recipe {
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px; margin: 16px 0; overflow: hidden;
+  }
+  .recipe-header {
+    background: #f6f8fa; padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: 600; font-size: 13px; display: flex; gap: 10px; align-items: center;
+  }
+  .recipe-body { padding: 14px 16px; }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--color-accent-fg); color: white; font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ── Source links ── */
+  .source-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+  .source-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--color-accent-fg);
+    text-decoration: none; border: 1px solid var(--color-border-default);
+    border-radius: 4px; padding: 3px 10px; background: var(--color-canvas-subtle);
+    transition: background .15s;
+  }
+  .source-link:hover { background: var(--color-accent-subtle); }
+  .source-link svg { width: 12px; height: 12px; fill: currentColor; }
+
+  /* ── Back to top ── */
+  #back-top {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #24292f; color: white; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; opacity: 0; transition: opacity .25s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  #back-top.visible { opacity: 1; }
+
+  /* ── Env setup pill ── */
+  .env-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #24292f; color: #c9d1d9; border-radius: 6px;
+    padding: 8px 14px; font-family: var(--font-mono); font-size: 13px;
+    margin: 6px 0;
+  }
+  .env-pill span { color: #7ee787; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar" id="sidebar">
+
+  <div class="toc-section-label numpy">NumPy</div>
+  <a class="toc-link" href="#np-ndarray">1.1 ndarray 对象</a>
+  <a class="toc-link" href="#np-index">1.2 索引与切片</a>
+  <a class="toc-link" href="#np-shape">1.3 形状操作</a>
+  <a class="toc-link" href="#np-math">1.4 数学运算</a>
+  <a class="toc-link" href="#np-broadcast">1.5 广播机制</a>
+  <a class="toc-link" href="#np-utils">1.6 常用工具函数</a>
+  <hr class="toc-divider">
+
+  <div class="toc-section-label pytorch">PyTorch</div>
+  <a class="toc-link" href="#pt-tensor">2.1 Tensor 对象</a>
+  <a class="toc-link" href="#pt-index">2.2 索引与切片</a>
+  <a class="toc-link" href="#pt-shape">2.3 形状操作</a>
+  <a class="toc-link" href="#pt-math">2.4 数学运算</a>
+  <a class="toc-link" href="#pt-numpy">2.5 与 NumPy 互转</a>
+  <a class="toc-link" href="#pt-autograd">2.6 自动微分基础</a>
+  <a class="toc-link" href="#pt-device">2.7 设备管理</a>
+  <hr class="toc-divider">
+
+  <div class="toc-section-label pandas">Pandas</div>
+  <a class="toc-link" href="#pd-objects">3.1 Series & DataFrame</a>
+  <a class="toc-link" href="#pd-io">3.2 读写数据</a>
+  <a class="toc-link" href="#pd-index">3.3 索引与选取</a>
+  <a class="toc-link" href="#pd-ops">3.4 常用操作</a>
+  <a class="toc-link" href="#pd-clean">3.5 数据清洗</a>
+  <a class="toc-link" href="#pd-groupby">3.6 分组聚合</a>
+  <hr class="toc-divider">
+
+  <div class="toc-section-label misc">综合</div>
+  <a class="toc-link" href="#compare">Part 4 · 对照速查表</a>
+  <a class="toc-link" href="#recipes">Part 5 · Mini Recipes</a>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+<div class="content">
+
+  <!-- Title -->
+  <h1 class="doc-title">NumPy · PyTorch · Pandas<br>新手入门指南</h1>
+  <p class="doc-subtitle">面向大模型研究者的数据科学三件套快速参考</p>
+  <div class="doc-meta">
+    <span class="meta-tag">NumPy 1.26+</span>
+    <span class="meta-tag">PyTorch 2.x</span>
+    <span class="meta-tag">Pandas 2.x</span>
+    <span class="meta-tag">Python 3.10+</span>
+    <span class="meta-tag">Windows + Miniconda</span>
+  </div>
+
+  <!-- ======================================================= -->
+  <!--  PART 1 NumPy  -->
+  <!-- ======================================================= -->
+  <div class="part-heading numpy" id="numpy">
+    <span class="part-icon">🔢</span>
+    <div><h2>Part 1 · NumPy 基础</h2><small>N 维数组的创建、操作与运算</small></div>
+  </div>
+
+  <div class="source-row">
+    <a class="source-link" href="https://numpy.org/doc/stable/user/absolute_beginners.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      NumPy Official Docs: Absolute Beginners
+    </a>
+    <a class="source-link" href="https://numpy.org/doc/stable/reference/routines.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      NumPy Routines Reference
+    </a>
+  </div>
+
+  <!-- 1.1 -->
+  <h3 id="np-ndarray">1.1 ndarray 对象</h3>
+
+  <p><code>numpy.ndarray</code> 是 NumPy 的核心数据结构，全称 N-dimensional array（N 维数组）。它在内存中以一段<strong>连续的字节块</strong>存储同质（homogeneous）类型的数据，并通过元数据（形状、步幅、数据类型等）描述如何解读这段内存。这种设计使得 NumPy 的批量运算能够直接调用底层 C/Fortran 代码，避免 Python 循环的性能开销。</p>
+
+  <p>理解 ndarray 有三个核心概念需要区分：</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>概念</th><th>含义</th><th>示例</th></tr>
+      <tr><td><strong>shape（形状）</strong></td><td>各维度的长度，决定数组的"外观"</td><td><code>(3, 4)</code> 表示 3 行 4 列</td></tr>
+      <tr><td><strong>dtype（数据类型）</strong></td><td>每个元素的类型，决定内存占用和运算行为</td><td><code>float64</code> 每元素 8 字节</td></tr>
+      <tr><td><strong>strides（步幅）</strong></td><td>在内存中移动到下一个元素需要跨越的字节数</td><td><code>(32, 8)</code>，行间跳 32 字节，列间跳 8 字节</td></tr>
+    </table>
+  </div>
+
+  <p>ndarray 支持的常见 <strong>dtype</strong> 如下：</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>dtype</th><th>说明</th><th>字节</th><th>典型用途</th></tr>
+      <tr><td><code>float64</code></td><td>双精度浮点（默认）</td><td>8</td><td>科学计算</td></tr>
+      <tr><td><code>float32</code></td><td>单精度浮点</td><td>4</td><td>与 PyTorch 对接</td></tr>
+      <tr><td><code>int64</code></td><td>64 位整数</td><td>8</td><td>索引、计数</td></tr>
+      <tr><td><code>int32</code></td><td>32 位整数</td><td>4</td><td>内存敏感场景</td></tr>
+      <tr><td><code>bool</code></td><td>布尔值</td><td>1</td><td>掩码操作</td></tr>
+      <tr><td><code>complex128</code></td><td>双精度复数</td><td>16</td><td>信号处理</td></tr>
+    </table>
+  </div>
+
+  <div class="alert info">
+    <strong>视图（View）与副本（Copy）</strong>：ndarray 的切片操作通常返回<strong>视图</strong>，视图与原数组共享底层内存——修改视图会影响原始数据。这是 NumPy 高效内存使用的关键机制，但也是初学者常见 bug 来源。可用 <code>a.copy()</code> 显式创建独立副本，用 <code>np.shares_memory(a, b)</code> 检查两个数组是否共享内存。
+  </div>
+
+  <h4>创建数组</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import numpy as np
+
+# 从列表创建
+a = np.array([1, 2, 3])            # 1-D, dtype 自动推断为 int64
+b = np.array([[1.0, 2], [3, 4]])   # 2-D, dtype 推断为 float64
+
+# 特殊数组
+np.zeros((3, 4))           # 全 0，shape (3,4)
+np.ones((2, 3), dtype=int) # 全 1，整型
+np.eye(3)                  # 3x3 单位矩阵
+np.full((2, 2), 7)         # 全 7
+
+# 序列数组
+np.arange(0, 10, 2)        # [0 2 4 6 8]，类似 range()
+np.linspace(0, 1, 5)       # [0. 0.25 0.5 0.75 1.]，等差 5 个点
+
+# 随机数组
+np.random.seed(42)         # 固定随机种子，保证可复现
+np.random.rand(3, 3)       # [0,1) 均匀分布
+np.random.randn(3, 3)      # 标准正态分布
+np.random.randint(0, 10, size=(2, 4))  # 整数随机</code></pre>
+  </div>
+
+  <h4>核心属性</h4>
+  <div class="card-grid">
+    <div class="attr-card"><code>a.shape</code><p>各维度大小的元组，如 <code>(3, 4)</code></p></div>
+    <div class="attr-card"><code>a.dtype</code><p>元素数据类型，如 <code>float64</code></p></div>
+    <div class="attr-card"><code>a.ndim</code><p>维度数量（轴数）</p></div>
+    <div class="attr-card"><code>a.size</code><p>元素总数量</p></div>
+    <div class="attr-card"><code>a.itemsize</code><p>单个元素占用字节数</p></div>
+    <div class="attr-card"><code>a.T</code><p>转置（返回视图）</p></div>
+  </div>
+
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.zeros((3, 4))
+print(a.shape)    # (3, 4)
+print(a.dtype)    # float64
+print(a.ndim)     # 2
+print(a.size)     # 12</code></pre>
+  </div>
+
+  <!-- 1.2 -->
+  <h3 id="np-index">1.2 索引与切片</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.arange(12).reshape(3, 4)
+# array([[ 0,  1,  2,  3],
+#        [ 4,  5,  6,  7],
+#        [ 8,  9, 10, 11]])
+
+# 基础索引（返回标量或视图）
+a[0]       # 第 0 行：[0 1 2 3]
+a[1, 2]    # 第 1 行第 2 列：6
+a[-1]      # 最后一行：[8 9 10 11]
+
+# 切片  [start:stop:step]
+a[:, 1]    # 所有行的第 1 列：[1 5 9]
+a[0:2, :]  # 前两行，所有列
+a[::2]     # 每隔一行取一行
+
+# 布尔索引（返回副本）
+mask = a > 5
+a[mask]    # 返回所有大于 5 的元素
+
+# Fancy Indexing（整数数组索引）
+rows = np.array([0, 2])
+cols = np.array([1, 3])
+a[rows, cols]  # [a[0,1], a[2,3]] = [1, 11]</code></pre>
+  </div>
+
+  <div class="alert warn">
+    <strong>视图 vs 副本</strong>：基础切片返回<strong>视图</strong>（View），修改视图会影响原数组；布尔索引和 Fancy Indexing 返回<strong>副本</strong>（Copy）。可用 <code>a.flags['OWNDATA']</code> 判断。
+  </div>
+
+  <!-- 1.3 -->
+  <h3 id="np-shape">1.3 形状操作</h3>
+  <ul class="fn-list">
+    <li><span class="fn-tag">reshape(shape)</span><span class="fn-desc">改变形状，元素总数不变，返回视图（可能）</span></li>
+    <li><span class="fn-tag">flatten()</span><span class="fn-desc">压平为 1-D，始终返回副本</span></li>
+    <li><span class="fn-tag">ravel()</span><span class="fn-desc">压平为 1-D，尽可能返回视图</span></li>
+    <li><span class="fn-tag">transpose() / .T</span><span class="fn-desc">转置，对多维数组可传入轴顺序</span></li>
+    <li><span class="fn-tag">np.squeeze(a)</span><span class="fn-desc">去除大小为 1 的维度</span></li>
+    <li><span class="fn-tag">np.expand_dims(a, axis)</span><span class="fn-desc">在指定位置插入一个新轴</span></li>
+  </ul>
+
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.arange(12)
+b = a.reshape(3, 4)   # shape (3,4)
+c = b.reshape(-1)     # -1 表示自动推断，等同 flatten
+d = b.reshape(2, -1)  # shape (2,6)，-1 自动计算列数
+
+# 转置
+e = b.T               # shape (4,3)
+
+# 扩展/压缩维度
+f = np.array([1, 2, 3])           # shape (3,)
+g = np.expand_dims(f, axis=0)     # shape (1,3)
+h = np.expand_dims(f, axis=1)     # shape (3,1)
+i = np.squeeze(g)                 # shape (3,)</code></pre>
+  </div>
+
+  <!-- 1.4 -->
+  <h3 id="np-math">1.4 数学运算</h3>
+
+  <h4>逐元素运算（Element-wise）</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.array([1., 2., 3.])
+b = np.array([4., 5., 6.])
+
+a + b          # [5. 7. 9.]
+a - b          # [-3. -3. -3.]
+a * b          # [4. 10. 18.]
+a / b          # [0.25 0.4  0.5]
+a ** 2         # [1. 4. 9.]
+np.sqrt(a)     # 开方
+np.exp(a)      # e^x
+np.log(a)      # 自然对数
+np.abs(a)      # 绝对值</code></pre>
+  </div>
+
+  <h4>矩阵运算</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+np.dot(A, B)   # 矩阵乘法，等同 A @ B
+A @ B          # Python 3.5+ 运算符写法（推荐）
+A * B          # 逐元素乘法（Hadamard），不是矩阵乘法
+
+np.linalg.inv(A)       # 矩阵求逆
+np.linalg.det(A)       # 行列式
+np.linalg.eig(A)       # 特征值 & 特征向量</code></pre>
+  </div>
+
+  <h4>归约运算（带 axis 参数）</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.array([[1, 2, 3], [4, 5, 6]])
+
+np.sum(a)          # 21，全部求和
+np.sum(a, axis=0)  # [5 7 9]，按列求和
+np.sum(a, axis=1)  # [6 15]，按行求和
+
+np.mean(a)              # 3.5
+np.max(a, axis=1)       # [3 6]
+np.argmax(a, axis=1)    # [2 2]，最大值下标
+np.std(a)               # 标准差</code></pre>
+  </div>
+
+  <!-- 1.5 -->
+  <h3 id="np-broadcast">1.5 广播机制（Broadcasting）</h3>
+  <p>广播允许不同形状的数组参与运算，无需手动复制数据。规则：从尾部维度开始比较，维度大小相等或其中一个为 1 时兼容。</p>
+
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.ones((3, 4))    # shape (3,4)
+b = np.array([1,2,3,4]) # shape (4,)  -> 广播为 (3,4)
+a + b                  # 每行都加上 b，结果 shape (3,4)
+
+# 列向量 + 行向量
+col = np.array([[1],[2],[3]])  # shape (3,1)
+row = np.array([10, 20, 30])   # shape (3,)  -> (1,3)
+col + row
+# array([[11, 21, 31],
+#        [12, 22, 32],
+#        [13, 23, 33]])</code></pre>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>操作数 A shape</th><th>操作数 B shape</th><th>结果 shape</th><th>是否合法</th></tr>
+      <tr><td><code>(3, 4)</code></td><td><code>(4,)</code></td><td><code>(3, 4)</code></td><td>✅</td></tr>
+      <tr><td><code>(3, 1)</code></td><td><code>(1, 4)</code></td><td><code>(3, 4)</code></td><td>✅</td></tr>
+      <tr><td><code>(3, 4)</code></td><td><code>(3,)</code></td><td>—</td><td>❌ 尾部不匹配</td></tr>
+      <tr><td><code>(5, 3, 4)</code></td><td><code>(3, 4)</code></td><td><code>(5, 3, 4)</code></td><td>✅</td></tr>
+    </table>
+  </div>
+
+  <!-- 1.6 -->
+  <h3 id="np-utils">1.6 常用工具函数</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = np.array([[1,2],[3,4]])
+b = np.array([[5,6],[7,8]])
+
+# 拼接
+np.concatenate([a, b], axis=0)  # 沿行拼接，shape (4,2)
+np.concatenate([a, b], axis=1)  # 沿列拼接，shape (2,4)
+np.vstack([a, b])               # 垂直堆叠，等同 axis=0
+np.hstack([a, b])               # 水平堆叠，等同 axis=1
+np.stack([a, b], axis=0)        # 新增一个维度后堆叠，shape (2,2,2)
+
+# 分割
+np.split(a, 2, axis=0)          # 沿行分成 2 份
+
+# 条件选取
+c = np.array([1, -2, 3, -4])
+np.where(c > 0, c, 0)           # 负数替换为 0: [1 0 3 0]
+np.where(c > 0)                 # 返回满足条件的下标 tuple
+
+# 排序与查找
+np.sort(c)                      # [-4 -2  1  3]
+np.argsort(c)                   # 排序后的原始下标
+np.argmax(c)                    # 最大值下标: 2
+np.unique(np.array([1,2,2,3])) # [1 2 3]</code></pre>
+  </div>
+
+  <!-- ======================================================= -->
+  <!--  PART 2 PyTorch  -->
+  <!-- ======================================================= -->
+  <div class="part-heading pytorch" id="pytorch">
+    <span class="part-icon">🔥</span>
+    <div><h2>Part 2 · PyTorch 基础</h2><small>Tensor 操作、自动微分与设备管理</small></div>
+  </div>
+
+  <div class="source-row">
+    <a class="source-link" href="https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      PyTorch Docs: Tensors Tutorial
+    </a>
+    <a class="source-link" href="https://www.python-engineer.com/courses/pytorchbeginner/02-tensor-basics/" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      python-engineer: Tensor Basics
+    </a>
+    <a class="source-link" href="https://docs.pytorch.org/docs/stable/generated/torch.Tensor.numpy.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      PyTorch Docs: Tensor.numpy()
+    </a>
+  </div>
+
+  <!-- 2.1 -->
+  <h3 id="pt-tensor">2.1 Tensor 对象</h3>
+
+  <p><code>torch.Tensor</code> 是 PyTorch 的核心数据结构，在概念上与 NumPy 的 ndarray 高度对称，都是同质类型的 N 维数组。但 Tensor 在此基础上额外支持两项关键能力，这正是深度学习框架所必需的：</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>能力</th><th>NumPy ndarray</th><th>PyTorch Tensor</th></tr>
+      <tr><td><strong>GPU 计算</strong></td><td>❌ 仅 CPU</td><td>✅ 可驻留在 CUDA 设备，调用 GPU 并行算力</td></tr>
+      <tr><td><strong>自动微分</strong></td><td>❌ 无</td><td>✅ 设置 <code>requires_grad=True</code> 后自动构建计算图</td></tr>
+      <tr><td><strong>内存共享</strong></td><td>可与同进程 Tensor 共享</td><td>可与 CPU 上的 ndarray 共享（<code>from_numpy</code>）</td></tr>
+    </table>
+  </div>
+
+  <p>Tensor 的内部结构与 ndarray 相同，也由<strong>数据指针 + 形状 + 步幅（strides）+ 数据类型</strong>组成。理解步幅对于分析 <code>view()</code> 是否合法、转置后内存是否连续等问题至关重要：</p>
+
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import torch
+
+t = torch.arange(12).reshape(3, 4)
+print(t.shape)    # torch.Size([3, 4])
+print(t.stride()) # (4, 1)：行间跨 4 个元素，列间跨 1 个元素
+
+# 转置后步幅改变，内存不再连续
+t_T = t.T
+print(t_T.is_contiguous())  # False
+print(t_T.stride())          # (1, 4)
+
+# contiguous() 创建连续副本，之后 view() 才能正常使用
+t_T_cont = t_T.contiguous()
+print(t_T_cont.is_contiguous())  # True</code></pre>
+  </div>
+
+  <p>PyTorch Tensor 有三种主要的<strong>存储位置（device）</strong>：</p>
+  <ul class="fn-list">
+    <li><span class="fn-tag">cpu</span><span class="fn-desc">默认设备，所有操作在 CPU 上执行</span></li>
+    <li><span class="fn-tag">cuda:0</span><span class="fn-desc">第一块 NVIDIA GPU，矩阵运算速度大幅提升</span></li>
+    <li><span class="fn-tag">mps</span><span class="fn-desc">Apple Silicon GPU（M1/M2/M3），PyTorch 2.x 支持</span></li>
+  </ul>
+
+  <div class="alert warn">
+    <strong>跨设备操作会报错</strong>：CPU Tensor 和 CUDA Tensor 之间不能直接进行运算，必须先用 <code>.to(device)</code> 或 <code>.cuda()</code> / <code>.cpu()</code> 将它们统一到同一设备。这是初学者最常遇到的运行时错误之一。
+  </div>
+
+  <h4>创建 Tensor</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import torch
+
+# 从数据创建
+t = torch.tensor([1, 2, 3])             # dtype 自动推断 torch.int64
+t = torch.tensor([1., 2., 3.])          # torch.float32
+t = torch.tensor([[1, 2], [3, 4]], dtype=torch.float32)
+
+# 特殊 Tensor
+torch.zeros(3, 4)
+torch.ones(2, 3)
+torch.eye(3)
+torch.full((2, 2), fill_value=7.0)
+
+# 序列 / 随机
+torch.arange(0, 10, 2)                  # [0, 2, 4, 6, 8]
+torch.linspace(0, 1, steps=5)           # [0., 0.25, 0.5, 0.75, 1.]
+torch.manual_seed(42)                   # 固定随机种子
+torch.rand(3, 3)                        # [0,1) 均匀
+torch.randn(3, 3)                       # 标准正态
+
+# 仿照已有 tensor 的 shape/dtype
+x = torch.rand(2, 3)
+torch.zeros_like(x)   # 与 x 同 shape，全 0
+torch.ones_like(x)
+torch.rand_like(x)</code></pre>
+  </div>
+
+  <h4>核心属性</h4>
+  <div class="card-grid">
+    <div class="attr-card"><code>t.shape</code><p>各维度大小，类型 <code>torch.Size</code></p></div>
+    <div class="attr-card"><code>t.dtype</code><p>如 <code>torch.float32</code></p></div>
+    <div class="attr-card"><code>t.device</code><p>如 <code>cpu</code> 或 <code>cuda:0</code></p></div>
+    <div class="attr-card"><code>t.ndim</code><p>维度数量</p></div>
+    <div class="attr-card"><code>t.numel()</code><p>元素总数量</p></div>
+    <div class="attr-card"><code>t.requires_grad</code><p>是否追踪梯度</p></div>
+  </div>
+
+  <h4>常用数据类型</h4>
+  <div class="table-wrap">
+    <table>
+      <tr><th>类型</th><th>PyTorch dtype</th><th>NumPy 对应</th><th>常用场景</th></tr>
+      <tr><td>32位浮点</td><td><code>torch.float32</code></td><td><code>float32</code></td><td>模型权重（默认）</td></tr>
+      <tr><td>64位浮点</td><td><code>torch.float64</code></td><td><code>float64</code></td><td>NumPy 转入的默认精度</td></tr>
+      <tr><td>64位整数</td><td><code>torch.int64</code></td><td><code>int64</code></td><td>类别标签</td></tr>
+      <tr><td>布尔</td><td><code>torch.bool</code></td><td><code>bool</code></td><td>掩码 Mask</td></tr>
+    </table>
+  </div>
+
+  <!-- 2.2 -->
+  <h3 id="pt-index">2.2 索引与切片</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">t = torch.arange(12).reshape(3, 4)
+# tensor([[ 0,  1,  2,  3],
+#         [ 4,  5,  6,  7],
+#         [ 8,  9, 10, 11]])
+
+t[0]          # 第 0 行
+t[-1]         # 最后一行
+t[1, 2]       # 标量 tensor，值为 6
+t[1, 2].item()  # 取出 Python 标量 6（重要！）
+
+t[:, 0]       # 所有行的第 0 列
+t[0:2, 1:3]   # 子矩阵
+
+# 布尔索引
+mask = t > 5
+t[mask]       # 返回 1-D tensor，所有满足条件的元素</code></pre>
+  </div>
+
+  <div class="alert tip">
+    <strong>.item()</strong> 是从只含一个元素的 tensor 提取 Python 标量的标准方式，常用于取 loss 值打印：<code>loss.item()</code>。
+  </div>
+
+  <!-- 2.3 -->
+  <h3 id="pt-shape">2.3 形状操作</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">t = torch.randn(4, 4)
+
+# view vs reshape
+y = t.view(16)       # 要求内存连续；失败时抛出 RuntimeError
+z = t.reshape(2, 8)  # 更安全，必要时自动复制；推荐优先用 reshape
+
+t.reshape(-1)         # 压平为 1-D
+
+# 轴操作（对应 NumPy 的 expand_dims / squeeze）
+t2 = torch.randn(3)
+t2.unsqueeze(0)       # shape (3,) -> (1,3)
+t2.unsqueeze(1)       # shape (3,) -> (3,1)
+t2.unsqueeze(0).squeeze(0)  # 还原
+
+# 转置
+t.T                   # 2-D 转置，等同 t.transpose(0,1)
+t.permute(1, 0)       # 多维通用，指定新轴顺序
+
+# 拼接
+a = torch.ones(2, 3)
+b = torch.zeros(2, 3)
+torch.cat([a, b], dim=0)   # shape (4,3)
+torch.cat([a, b], dim=1)   # shape (2,6)
+torch.stack([a, b], dim=0) # 新增维度，shape (2,2,3)</code></pre>
+  </div>
+
+  <div class="alert warn">
+    <strong>view vs reshape 关键差异</strong>：<code>view()</code> 要求 tensor 在内存中是连续的（<code>t.is_contiguous()</code>），否则抛错；<code>reshape()</code> 在非连续时会自动创建副本。日常开发优先使用 <code>reshape()</code>。
+  </div>
+
+  <!-- 2.4 -->
+  <h3 id="pt-math">2.4 数学运算</h3>
+
+  <h4>逐元素运算与 in-place 版本</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">a = torch.tensor([1., 2., 3.])
+b = torch.tensor([4., 5., 6.])
+
+a + b              # 逐元素加，等同 torch.add(a, b)
+a - b              # torch.sub(a, b)
+a * b              # torch.mul(a, b)
+a / b              # torch.div(a, b)
+torch.pow(a, 2)    # 幂运算
+torch.sqrt(a)
+torch.exp(a)
+torch.log(a)
+torch.abs(a)
+torch.clamp(a, min=1.5, max=2.5)  # 裁剪值范围
+
+# in-place 运算（尾部加 _ 修改原 tensor）
+a.add_(1)          # a 的每个元素加 1，原地修改
+a.mul_(2)</code></pre>
+  </div>
+
+  <div class="alert danger">
+    <strong>in-place 与自动微分的冲突</strong>：当 tensor 被加入计算图（<code>requires_grad=True</code>）时，in-place 运算会破坏梯度计算所需的历史记录，导致错误。训练阶段避免对需要梯度的 tensor 使用 in-place 操作。参考：<a href="https://apxml.com/courses/getting-started-with-pytorch/chapter-1-pytorch-fundamentals-setup/basic-tensor-operations" target="_blank">PyTorch Basic Tensor Operations</a>
+  </div>
+
+  <h4>矩阵运算与归约</h4>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">A = torch.rand(2, 3)
+B = torch.rand(3, 4)
+
+# 矩阵乘法
+torch.mm(A, B)      # 严格要求 2-D
+A @ B               # 等同，支持 batched
+torch.matmul(A, B)  # 最通用，支持广播
+
+# 归约（dim 参数对应 NumPy 的 axis）
+t = torch.rand(2, 3)
+t.sum()             # 全部求和
+t.sum(dim=0)        # 按列，shape (3,)
+t.sum(dim=1)        # 按行，shape (2,)
+t.mean(dim=1)
+t.max(dim=1)        # 返回 (values, indices) 的 namedtuple
+t.argmax(dim=1)     # 只要下标</code></pre>
+  </div>
+
+  <!-- 2.5 -->
+  <h3 id="pt-numpy">2.5 与 NumPy 的互转</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import numpy as np
+import torch
+
+# NumPy -> Tensor
+arr = np.array([1., 2., 3.])
+t1 = torch.from_numpy(arr)    # 共享内存！修改 arr 会影响 t1
+t2 = torch.tensor(arr)        # 复制一份，独立内存（更安全）
+
+# 验证共享内存
+arr[0] = 99
+print(t1[0])   # tensor(99.) —— 受影响
+print(t2[0])   # tensor(1.)  —— 不受影响
+
+# Tensor -> NumPy（需在 CPU 上）
+t = torch.ones(3)
+n = t.numpy()           # 共享内存
+n2 = t.detach().numpy() # 有梯度时必须先 detach()
+
+# GPU tensor -> NumPy（必须先移到 CPU）
+# t_gpu = t.cuda()
+# n = t_gpu.cpu().detach().numpy()</code></pre>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>方向</th><th>函数</th><th>内存共享</th><th>适用场景</th></tr>
+      <tr><td>NumPy → Tensor</td><td><code>torch.from_numpy()</code></td><td>是</td><td>大数据，避免复制开销</td></tr>
+      <tr><td>NumPy → Tensor</td><td><code>torch.tensor()</code></td><td>否</td><td>安全首选</td></tr>
+      <tr><td>Tensor → NumPy</td><td><code>.numpy()</code></td><td>是</td><td>无梯度、在 CPU 上</td></tr>
+      <tr><td>Tensor → NumPy</td><td><code>.detach().numpy()</code></td><td>是</td><td>有梯度时</td></tr>
+      <tr><td>Tensor → NumPy</td><td><code>.cpu().detach().numpy()</code></td><td>否(CPU copy)</td><td>GPU tensor</td></tr>
+    </table>
+  </div>
+
+  <!-- 2.6 -->
+  <h3 id="pt-autograd">2.6 自动微分基础（Autograd）</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import torch
+
+# requires_grad=True 告诉 PyTorch 追踪对该 tensor 的所有操作
+x = torch.tensor([2.0], requires_grad=True)
+y = x ** 2 + 3 * x + 1   # 构建计算图：y = x^2 + 3x + 1
+
+# 反向传播，计算 dy/dx
+y.backward()
+
+# dy/dx = 2x + 3，在 x=2 时 = 7
+print(x.grad)  # tensor([7.])
+
+# torch.no_grad()：推理阶段关闭梯度追踪，节省内存和计算
+with torch.no_grad():
+    z = x * 2  # 该操作不加入计算图</code></pre>
+  </div>
+
+  <div class="alert info">
+    <strong>入门阶段只需记住三点</strong>：① 需要优化的参数设置 <code>requires_grad=True</code>；② 每次 backward 前将 <code>.grad</code> 清零（<code>optimizer.zero_grad()</code>）；③ 推理/评估阶段用 <code>torch.no_grad()</code> 包裹，避免不必要的内存消耗。
+  </div>
+
+  <!-- 2.7 -->
+  <h3 id="pt-device">2.7 设备管理</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import torch
+
+# 检测可用设备
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)   # cuda 或 cpu
+
+# 将 tensor 移动到设备
+t = torch.rand(3, 3)
+t_gpu = t.to(device)       # 推荐写法，device 对象
+t_gpu = t.cuda()           # 等同，但硬编码了 cuda
+
+# 将模型移动到设备（同样的 API）
+# model = MyModel().to(device)
+
+# 确认所在设备
+print(t_gpu.device)        # cuda:0</code></pre>
+  </div>
+
+  <!-- ======================================================= -->
+  <!--  PART 3 Pandas  -->
+  <!-- ======================================================= -->
+  <div class="part-heading pandas" id="pandas">
+    <span class="part-icon">🐼</span>
+    <div><h2>Part 3 · Pandas 基础</h2><small>表格数据的读取、操作与清洗</small></div>
+  </div>
+
+  <div class="source-row">
+    <a class="source-link" href="https://pandas.pydata.org/docs/user_guide/10min.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Pandas: 10 Minutes to pandas
+    </a>
+    <a class="source-link" href="https://pandas.pydata.org/docs/reference/index.html" target="_blank">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Pandas API Reference
+    </a>
+  </div>
+
+  <!-- 3.1 -->
+  <h3 id="pd-objects">3.1 Series 与 DataFrame</h3>
+
+  <p>Pandas 有两种核心数据结构，它们之间存在明确的层级关系：<strong>DataFrame 由多个 Series 按列组合而成</strong>，每个 Series 都共享同一个行索引（Index）。</p>
+
+  <h4>Series：带标签的一维数组</h4>
+
+  <p><code>pd.Series</code> 本质上是一个<strong>带显式标签索引的 1-D ndarray</strong>。它在 NumPy 数组的基础上增加了一个 <code>Index</code> 对象，用于替代位置编号，使得数据可以通过有意义的标签访问（如日期、名称、ID）。</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>组成部分</th><th>说明</th></tr>
+      <tr><td><code>.values</code></td><td>底层 NumPy ndarray，存储实际数据</td></tr>
+      <tr><td><code>.index</code></td><td>Index 对象，存储标签，可以是整数、字符串、日期等</td></tr>
+      <tr><td><code>.dtype</code></td><td>元素数据类型，与 NumPy 一致</td></tr>
+      <tr><td><code>.name</code></td><td>Series 的名称，DataFrame 中对应列名</td></tr>
+    </table>
+  </div>
+
+  <h4>DataFrame：带标签的二维表格</h4>
+
+  <p><code>pd.DataFrame</code> 是 Pandas 最核心的数据结构，可以理解为<strong>共享同一行索引的若干 Series 的有序字典</strong>。它的每一列是一个 Series，每一行由行索引（<code>index</code>）标识，每一列由列索引（<code>columns</code>）标识。</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>组成部分</th><th>说明</th></tr>
+      <tr><td><code>.index</code></td><td>行标签，默认为 0, 1, 2, ...，可自定义为日期、字符串等</td></tr>
+      <tr><td><code>.columns</code></td><td>列标签，对应各列的名称</td></tr>
+      <tr><td><code>.values</code></td><td>底层 NumPy ndarray，shape 为 (行数, 列数)</td></tr>
+      <tr><td><code>.dtypes</code></td><td>各列的数据类型（Series 形式）</td></tr>
+      <tr><td><code>.shape</code></td><td>行列数元组，如 <code>(100, 5)</code></td></tr>
+    </table>
+  </div>
+
+  <div class="alert info">
+    <strong>Index 对象的重要性</strong>：Pandas 的行/列标签由 <code>Index</code> 对象管理。它不是普通的列表，而是一个<strong>不可变的、支持集合运算的有序标签集</strong>。两个 DataFrame 进行运算时，Pandas 会自动按标签对齐（align），这在处理缺失数据时尤其关键——标签不匹配的位置会自动填充 <code>NaN</code>，而不会像 NumPy 那样直接按位置运算。
+  </div>
+
+  <p>Pandas 中数据类型（<code>dtype</code>）的选择对内存和性能影响显著：</p>
+  <div class="table-wrap">
+    <table>
+      <tr><th>Pandas dtype</th><th>说明</th><th>对应 NumPy</th></tr>
+      <tr><td><code>int64</code></td><td>整数列默认类型</td><td><code>int64</code></td></tr>
+      <tr><td><code>float64</code></td><td>浮点列默认；含 NaN 的整数列也会升为 float64</td><td><code>float64</code></td></tr>
+      <tr><td><code>object</code></td><td>字符串或混合类型（存储 Python 对象指针，性能差）</td><td>—</td></tr>
+      <tr><td><code>category</code></td><td>低基数字符串的高效编码，节省内存</td><td>—</td></tr>
+      <tr><td><code>bool</code></td><td>布尔值</td><td><code>bool</code></td></tr>
+      <tr><td><code>datetime64[ns]</code></td><td>时间戳，支持时区</td><td><code>datetime64</code></td></tr>
+    </table>
+  </div>
+
+  <p><code>pandas 2.x</code> 引入了 <strong>Copy-on-Write（CoW）</strong> 机制：对 DataFrame 切片的修改不会再静默传播回原始对象，降低了意外修改数据的风险，但同时需要留意旧代码的行为变化。</p>
+
+  <p>Pandas 数据结构创建示例：</p>
+
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import pandas as pd
+import numpy as np
+
+# ── Series ──
+s = pd.Series([1, 3, 5, 7])                       # 自动整数索引 0,1,2,3
+s = pd.Series([1, 3, 5], index=['a', 'b', 'c'])   # 自定义标签索引
+print(s['a'])      # 1
+print(s.values)    # array([1, 3, 5])  <-- NumPy ndarray
+
+# ── DataFrame ──
+# 从字典创建（最常用）
+df = pd.DataFrame({
+    'name':  ['Alice', 'Bob', 'Carol'],
+    'score': [88, 92, 79],
+    'grade': ['B', 'A', 'C']
+})
+# 从 NumPy 数组创建
+arr = np.random.randint(0, 100, size=(3, 3))
+df2 = pd.DataFrame(arr, columns=['x', 'y', 'z'])
+
+# 查看基本信息
+df.shape      # (3, 3)
+df.dtypes     # 各列数据类型
+df.info()     # 非空值数量、内存占用
+df.describe() # 数值列统计摘要（均值、标准差、百分位等）
+df.head(2)    # 前 2 行
+df.tail(2)    # 后 2 行</code></pre>
+  </div>
+
+  <!-- 3.2 -->
+  <h3 id="pd-io">3.2 读写数据</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import pandas as pd
+
+# 读取 CSV
+df = pd.read_csv('data.csv')
+df = pd.read_csv('data.csv', sep='\t')             # Tab 分隔
+df = pd.read_csv('data.csv', encoding='utf-8-sig') # 中文文件
+df = pd.read_csv('data.csv', index_col=0)          # 第 0 列作为行索引
+df = pd.read_csv('data.csv', usecols=['a', 'b'])   # 只读取指定列
+df = pd.read_csv('data.csv', nrows=100)            # 只读前 100 行
+
+# 读取 Excel
+df = pd.read_excel('data.xlsx', sheet_name='Sheet1')
+
+# 写出
+df.to_csv('output.csv', index=False)   # index=False 不写出行索引
+df.to_excel('output.xlsx', index=False)</code></pre>
+  </div>
+
+  <!-- 3.3 -->
+  <h3 id="pd-index">3.3 索引与选取</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">df = pd.DataFrame({
+    'name':  ['Alice', 'Bob', 'Carol'],
+    'score': [88, 92, 79],
+    'grade': ['B', 'A', 'C']
+}, index=['r0', 'r1', 'r2'])
+
+# 列选取
+df['name']            # 单列，返回 Series
+df[['name', 'score']] # 多列，返回 DataFrame
+
+# .loc  —— 基于标签（label-based）
+df.loc['r0']                 # 标签 r0 的行
+df.loc['r0', 'name']         # 单元格
+df.loc['r0':'r1', 'score':]  # 切片（loc 的切片是闭区间！）
+
+# .iloc —— 基于整数位置（position-based，类似 NumPy）
+df.iloc[0]             # 第 0 行
+df.iloc[0, 1]          # 第 0 行第 1 列
+df.iloc[:2, :2]        # 前两行前两列（半开区间）
+
+# 布尔索引（最常用的数据筛选方式）
+df[df['score'] > 80]
+df[(df['score'] > 80) & (df['grade'] == 'A')]  # 多条件用 & |
+df[df['name'].isin(['Alice', 'Bob'])]</code></pre>
+  </div>
+
+  <div class="alert warn">
+    <strong>loc vs iloc 切片边界差异</strong>：<code>loc['r0':'r1']</code> 包含两端（闭区间）；<code>iloc[0:2]</code> 不含右端（半开区间），与 Python 列表一致。
+  </div>
+
+  <!-- 3.4 -->
+  <h3 id="pd-ops">3.4 常用操作</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({'a': [1,2,3], 'b': [4,5,6], 'c': [7,8,9]})
+
+# ── 新增 / 修改列 ──
+df['d'] = df['a'] + df['b']      # 新增列
+df['e'] = df['a'].apply(lambda x: x**2)  # apply 逐元素
+
+# ── 删除 ──
+df.drop('e', axis=1, inplace=True)       # 删列，inplace 原地修改
+df.drop([0], axis=0, inplace=True)       # 删行
+
+# ── 排序 ──
+df.sort_values('a', ascending=False)     # 按列降序
+df.sort_values(['a', 'b'])               # 多列排序
+
+# ── 数学统计 ──
+df.sum()           # 各列求和
+df.mean()          # 各列均值
+df.corr()          # 各列相关系数矩阵
+df['a'].value_counts()  # 频次统计
+
+# ── 转置 ──
+df.T               # 行列互换
+
+# ── 列重命名 ──
+df.rename(columns={'a': 'col_A', 'b': 'col_B'}, inplace=True)
+
+# ── 合并（类 SQL JOIN）──
+df_left  = pd.DataFrame({'key': ['K0','K1'], 'val_left': [1, 2]})
+df_right = pd.DataFrame({'key': ['K0','K1'], 'val_right': [3, 4]})
+pd.merge(df_left, df_right, on='key', how='inner')  # inner/left/right/outer
+
+# ── 纵向拼接 ──
+pd.concat([df_left, df_right], axis=0, ignore_index=True)</code></pre>
+  </div>
+
+  <!-- 3.5 -->
+  <h3 id="pd-clean">3.5 数据清洗</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    'name':  ['Alice', None, 'Carol', 'Alice'],
+    'score': [88, np.nan, 79, 88],
+    'age':   [25, 30, np.nan, 25]
+})
+
+# ── 缺失值 ──
+df.isnull()              # 布尔 DataFrame，True 表示缺失
+df.isnull().sum()        # 各列缺失数量
+df.dropna()              # 删除含任意 NaN 的行
+df.dropna(subset=['name'])  # 只检查指定列
+df.fillna(0)             # 用 0 填充
+df['score'].fillna(df['score'].mean(), inplace=True)  # 用均值填充
+
+# ── 重复值 ──
+df.duplicated()          # 布尔 Series，True 表示重复行
+df.drop_duplicates()     # 删除重复行（保留首次出现）
+df.drop_duplicates(subset=['name'])  # 仅看指定列是否重复
+
+# ── 类型转换 ──
+df['score'] = df['score'].astype(float)
+df['name']  = df['name'].astype(str)
+
+# ── 字符串操作（通过 .str 访问器）──
+df['name'].str.lower()
+df['name'].str.strip()
+df['name'].str.contains('A', na=False)
+df['name'].str.replace('Alice', 'Alex')</code></pre>
+  </div>
+
+  <!-- 3.6 -->
+  <h3 id="pd-groupby">3.6 分组聚合（GroupBy）</h3>
+  <div class="code-block-wrap">
+    <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+    <pre><code class="language-python">import pandas as pd
+
+df = pd.DataFrame({
+    'dept':  ['A','A','B','B','A'],
+    'score': [80, 90, 70, 85, 75],
+    'level': ['jr','sr','jr','sr','sr']
+})
+
+# 基础 groupby
+g = df.groupby('dept')
+g['score'].mean()         # 各部门均值
+g['score'].agg(['mean', 'max', 'count'])  # 多重聚合
+
+# 多列分组
+df.groupby(['dept', 'level'])['score'].mean()
+
+# 自定义聚合函数
+df.groupby('dept')['score'].agg(lambda x: x.max() - x.min())
+
+# transform：聚合结果广播回原行（不改变行数）
+df['dept_mean'] = df.groupby('dept')['score'].transform('mean')</code></pre>
+  </div>
+
+  <!-- ======================================================= -->
+  <!--  PART 4 对照表  -->
+  <!-- ======================================================= -->
+  <div class="part-heading misc" id="compare">
+    <span class="part-icon">📊</span>
+    <div><h2>Part 4 · NumPy vs PyTorch 对照速查表</h2><small>同类操作并列展示</small></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>操作类别</th><th>NumPy</th><th>PyTorch</th></tr>
+      <tr><td>创建全 0</td><td><code>np.zeros((3,4))</code></td><td><code>torch.zeros(3,4)</code></td></tr>
+      <tr><td>创建全 1</td><td><code>np.ones((3,4))</code></td><td><code>torch.ones(3,4)</code></td></tr>
+      <tr><td>随机均匀</td><td><code>np.random.rand(3,4)</code></td><td><code>torch.rand(3,4)</code></td></tr>
+      <tr><td>随机正态</td><td><code>np.random.randn(3,4)</code></td><td><code>torch.randn(3,4)</code></td></tr>
+      <tr><td>等差序列</td><td><code>np.arange(0,10,2)</code></td><td><code>torch.arange(0,10,2)</code></td></tr>
+      <tr><td>设随机种子</td><td><code>np.random.seed(42)</code></td><td><code>torch.manual_seed(42)</code></td></tr>
+      <tr><td>形状</td><td><code>a.shape</code></td><td><code>t.shape</code></td></tr>
+      <tr><td>元素数量</td><td><code>a.size</code></td><td><code>t.numel()</code></td></tr>
+      <tr><td>改变形状</td><td><code>a.reshape(2,-1)</code></td><td><code>t.reshape(2,-1)</code></td></tr>
+      <tr><td>压平</td><td><code>a.flatten()</code></td><td><code>t.reshape(-1)</code></td></tr>
+      <tr><td>转置</td><td><code>a.T</code></td><td><code>t.T</code></td></tr>
+      <tr><td>插入新轴</td><td><code>np.expand_dims(a,0)</code></td><td><code>t.unsqueeze(0)</code></td></tr>
+      <tr><td>去除大小 1 轴</td><td><code>np.squeeze(a)</code></td><td><code>t.squeeze()</code></td></tr>
+      <tr><td>矩阵乘法</td><td><code>A @ B / np.dot(A,B)</code></td><td><code>A @ B / torch.mm(A,B)</code></td></tr>
+      <tr><td>按轴求和</td><td><code>a.sum(axis=0)</code></td><td><code>t.sum(dim=0)</code></td></tr>
+      <tr><td>按轴求均值</td><td><code>a.mean(axis=1)</code></td><td><code>t.mean(dim=1)</code></td></tr>
+      <tr><td>最大值下标</td><td><code>np.argmax(a,axis=1)</code></td><td><code>t.argmax(dim=1)</code></td></tr>
+      <tr><td>条件选取</td><td><code>np.where(cond,x,y)</code></td><td><code>torch.where(cond,x,y)</code></td></tr>
+      <tr><td>拼接</td><td><code>np.concatenate([a,b],axis=0)</code></td><td><code>torch.cat([a,b],dim=0)</code></td></tr>
+      <tr><td>堆叠（新轴）</td><td><code>np.stack([a,b],axis=0)</code></td><td><code>torch.stack([a,b],dim=0)</code></td></tr>
+    </table>
+  </div>
+
+  <!-- ======================================================= -->
+  <!--  PART 5 Mini Recipes  -->
+  <!-- ======================================================= -->
+  <div class="part-heading misc" id="recipes">
+    <span class="part-icon">🍳</span>
+    <div><h2>Part 5 · Mini Recipes</h2><small>典型使用模式：从数据处理到模型推理</small></div>
+  </div>
+
+  <!-- Recipe 1 -->
+  <div class="recipe">
+    <div class="recipe-header"><span class="step-num">1</span> CSV 数据 → Tensor（完整预处理流水线）</div>
+    <div class="recipe-body">
+      <p>典型场景：将 Pandas 读取的 CSV 文件转换为可送入 PyTorch 模型的 Tensor。</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+        <pre><code class="language-python">import pandas as pd
+import numpy as np
+import torch
+
+# 1. 读取数据
+df = pd.read_csv('dataset.csv')
+
+# 2. 数据清洗
+df.dropna(inplace=True)
+df = df.drop_duplicates()
+
+# 3. 分离特征与标签
+X = df.drop('label', axis=1).values   # NumPy array, shape (N, F)
+y = df['label'].values                 # shape (N,)
+
+# 4. 归一化（使用 NumPy）
+X_mean = X.mean(axis=0)
+X_std  = X.std(axis=0) + 1e-8         # 防止除零
+X_norm = (X - X_mean) / X_std
+
+# 5. 转换为 Tensor
+X_tensor = torch.tensor(X_norm, dtype=torch.float32)
+y_tensor = torch.tensor(y, dtype=torch.long)
+
+print(X_tensor.shape, y_tensor.shape)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe 2 -->
+  <div class="recipe">
+    <div class="recipe-header"><span class="step-num">2</span> 随机种子固定（可复现实验）</div>
+    <div class="recipe-body">
+      <p>研究实验的可复现性要求同时固定 NumPy、PyTorch、Python 原生随机数。</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+        <pre><code class="language-python">import random, numpy as np, torch
+
+def set_seed(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        # 关闭 cuDNN 的随机算法（牺牲少量速度换取确定性）
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+set_seed(42)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe 3 -->
+  <div class="recipe">
+    <div class="recipe-header"><span class="step-num">3</span> Batch 维度操作（模型输入格式处理）</div>
+    <div class="recipe-body">
+      <p>深度学习模型通常期望输入包含 batch 维度，本 recipe 演示如何增加/去除 batch 维度。</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+        <pre><code class="language-python">import torch
+
+# 单张图片 shape: (C, H, W) = (3, 224, 224)
+img = torch.rand(3, 224, 224)
+
+# 增加 batch 维度 -> (1, 3, 224, 224)
+img_batch = img.unsqueeze(0)
+
+# 模型输出后去除 batch 维度（若 batch=1）
+output = img_batch.squeeze(0)   # 还原 (3, 224, 224)
+
+# 构造真实 batch（假设有 8 张图片）
+batch = torch.rand(8, 3, 224, 224)
+print(batch.shape)   # torch.Size([8, 3, 224, 224])
+
+# 拆分 batch
+first_img = batch[0]       # (3, 224, 224)
+first_two = batch[:2]      # (2, 3, 224, 224)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe 4 -->
+  <div class="recipe">
+    <div class="recipe-header"><span class="step-num">4</span> 模型推理结果 → Pandas 分析</div>
+    <div class="recipe-body">
+      <p>将模型输出的 Tensor 转回 NumPy/Pandas，进行后处理分析或保存结果。</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+        <pre><code class="language-python">import torch, pandas as pd, numpy as np
+
+# 模拟模型输出（logits）
+logits = torch.randn(100, 10)   # 100 个样本，10 类
+
+# 推理阶段（不需要梯度）
+with torch.no_grad():
+    probs = torch.softmax(logits, dim=1)     # (100, 10)
+    preds = torch.argmax(probs, dim=1)       # (100,)
+
+# Tensor -> NumPy -> Pandas
+probs_np = probs.cpu().numpy()              # (100, 10)
+preds_np = preds.cpu().numpy()             # (100,)
+
+results = pd.DataFrame(probs_np, columns=[f'class_{i}' for i in range(10)])
+results['prediction'] = preds_np
+results['confidence'] = probs_np.max(axis=1)
+
+print(results.head())
+results.to_csv('predictions.csv', index=False)</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe 5 -->
+  <div class="recipe">
+    <div class="recipe-header"><span class="step-num">5</span> Pandas 统计分析 → NumPy 计算 → 可视化准备</div>
+    <div class="recipe-body">
+      <p>使用 Pandas 做数据聚合，NumPy 做数值计算，最终整理成可直接传入 matplotlib 的格式。</p>
+      <div class="code-block-wrap">
+        <div class="code-block-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+        <pre><code class="language-python">import pandas as pd
+import numpy as np
+
+# 模拟实验数据：不同 epoch 下的 loss 和 accuracy
+np.random.seed(0)
+epochs = np.arange(1, 21)
+df = pd.DataFrame({
+    'epoch': epochs,
+    'train_loss': 2.0 * np.exp(-0.15 * epochs) + np.random.rand(20) * 0.05,
+    'val_loss':   2.2 * np.exp(-0.12 * epochs) + np.random.rand(20) * 0.08,
+    'val_acc':    1 - np.exp(-0.2 * epochs) + np.random.rand(20) * 0.02,
+})
+
+# Pandas 聚合分析
+best_epoch = df.loc[df['val_loss'].idxmin(), 'epoch']
+print(f"最佳 epoch: {best_epoch}")
+
+# 提取 NumPy 数组用于绘图（直接传给 matplotlib）
+x      = df['epoch'].values
+t_loss = df['train_loss'].values
+v_loss = df['val_loss'].values
+v_acc  = df['val_acc'].values
+
+# 平滑（移动平均）
+def moving_avg(arr, window=3):
+    return np.convolve(arr, np.ones(window)/window, mode='valid')
+
+t_loss_smooth = moving_avg(t_loss)
+
+# 下一步：import matplotlib.pyplot as plt 后直接 plt.plot(x, t_loss)
+print("数据准备完毕，shape:", x.shape, t_loss.shape)</code></pre>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.content -->
+</main>
+
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+<script>
+// ── highlight.js init ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+});
+
+// ── Copy button ──
+function copyCode(btn) {
+  const code = btn.closest('.code-block-wrap').querySelector('code');
+  navigator.clipboard.writeText(code.innerText).then(() => {
+    btn.textContent = '已复制 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// ── Back to top button ──
+const backTop = document.getElementById('back-top');
+window.addEventListener('scroll', () => {
+  backTop.classList.toggle('visible', window.scrollY > 400);
+});
+
+// ── Active sidebar link on scroll ──
+const sections = document.querySelectorAll('[id]');
+const tocLinks = document.querySelectorAll('.toc-link');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      tocLinks.forEach(l => {
+        l.classList.toggle('active', l.getAttribute('href') === '#' + entry.target.id);
+      });
+    }
+  });
+}, { rootMargin: '-60px 0px -70% 0px', threshold: 0 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
