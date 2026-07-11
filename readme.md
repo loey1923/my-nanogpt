@@ -16,6 +16,9 @@
 
 ### nanogpt项目的提交记录分层
 
+<details>
+    <summary>点击展开/收起</summary>
+
 **阶段 1：最小可运行原型（核心架构）**
 从空文件到能跑通一次前向传播和生成。
 
@@ -66,6 +69,8 @@
 | `21d3d32` | 加入 validation split |
 | `8018ed2` | 加入 HellaSwag 评测 |
 | `efedfac` | 加入 checkpoint 保存 |
+
+</details>
 
 ## **3.28**
 
@@ -588,7 +593,7 @@ for step in range(max_steps):
 
 ### 完成exercises\下的练习
 
-由opus4.6阅读build-nangpt源码，将其拆解为[exercises](./exercises)下若干练习题。完成练习，熟练使用torch库函数与类，实现以下组件：
+由opus4.6阅读build-nangpt源码，将其拆解为[exercises\\](./exercises)下若干练习题。完成练习，熟练使用torch库函数与类，实现以下组件：
 
 - 字符级Tokenizer：decode()/encode()，实现字符与token id之间的转换
 - 单头掩码Self-Attention
@@ -599,5 +604,198 @@ for step in range(max_steps):
 - 训练循环逻辑：将所有组件组合，在训练数据上训练(前向传播、计算损失、反向传播、梯度下降优化)
 - 文本生成器：自回归 + temperature 缩放 + top-k 过滤 + multinomial 采样
 
+## **7.10**
 
+### 完成模型定义与训练pipeline
+
+完成[gpt.py](./gpt.py)中的`GPT`类定义与[train_gpt2](./train_gpt2.py)中的training loop，踩坑点：
+
+- 输入张量的T指的是序列长度，即输入序列的token数，Multi-Head Attention的block_size指的是最大上下文长度，T不可超过block_size
+- nn.embedding实际相当于一个查找表，例如
+
+```python
+......
+self.token_embedding = nn.Embedding(vocab_size, n_embd)#输入token的种类最多有vocab_size种
+self.position_embedding = nn.Embedding(block_size, n_embd)#输入token的位置最多有block_size个
+......
+B, T = idx.shape
+position = torch.arange(T, device = idx.device)
+x = self.position_embedding(position) + self.token_embedding(idx) # (B, T, n_embd)
+......
+```
+
+其中`position_embedding()`是拿每一个`position`(形状为(T,))中的值在共有block_size项的表中查找对应项，替换为该项对应的n_embd维特征张量，位置嵌入的输出形状为(T, n_embd)，随后与词嵌入的输出相加，广播为(B, T, n_embd)
+
+- `F.cross_entrophy()`输入的logits与targets，形状应变换为(B * T,  vocab_size)，(B * T, 1)
+- `Generator`中取logits最后一个时间步，即对输入上下文的下一次的预测
+
+## **7.11**
+
+### 对齐 GPT-2 的结构，在预训练基础上微调
+
+1. 修改`GPT` class 中定义的参数名，与 GPT-2 对齐
+
+2. 在[fine_tune.py](./fine_tune.py)中，从 HuggingFace 加载 GPT-2 权重，换用 GPT-2 的 BPE Tokenizer
+
+3. 类似 training loop，对预训练模型在莎士比亚训练集上做微调，前后对比：
+
+   ```bash
+   --- 微调前生成 ---
+   To be or not to be, I'm not here to lecture anyone on how to make the most of your time. I've been here a couple of times, trying to become a better professional in a short time, and it's not going to ever be easy.
+   
+   But one thing I learned about myself is that your time is a resource.
+   
+   Here you find the source of your attention.
+   
+   It's what you put in the water in the morning, that makes a difference in your life.
+   
+   It's your body's response to your attention.
+   
+   Think about this.
+   
+   Your brain knows that your body doesn't feel the need to spend the time, energy and energy you put into it to respond to you.
+   
+   If you've never felt that way before, then you've probably thought about this one a little too much.
+   
+   You've probably thought about that one a little too much.
+   
+   You've probably thought about that one a little too much.
+   
+   You
+   
+   --- 微调后生成 ---
+   To be or not to be, no man is a slave.
+   
+   KING RICHARD III:
+   And why should you say you must not be?
+   
+   GREY:
+   I do say there are some people who have
+   like to be slaves to all: and I'll be it, King Edward.
+   
+   KING RICHARD III:
+   No, that is not the case.
+   
+   GREY:
+   When I was old, he would have the power, and I say
+   not him. We were bound by the law of our time.
+   
+   KING RICHARD III:
+   You know this, sir?
+   
+   GREY:
+   I did in law.
+   
+   KING RICHARD III:
+   You know that law?
+   
+   GREY:
+   I do, sir.
+   
+   KING RICHARD III:
+   And you know it, sir?
+   
+   GREY:
+   I do, I know it.
+   
+   KING RICHARD III:
+   I would not
+   ```
+
+### 项目总结
+
+#### Karpathy 的 build-nanogpt 原项目
+
+Karpathy 的项目是一个教学性质的 GPT-2 复现：用约 300 行 PyTorch 代码重新实现 GPT-2 的模型结构，加载 HuggingFace 的预训练权重验证正确性，然后在 FineWeb 数据集上从头训练一个 124M 参数的模型。项目展示了从模型定义、数据流水线、分布式训练到评估（HellaSwag）的完整流程。
+
+---
+
+#### 手写的部分：从零构建 GPT
+
+##### 整体 Pipeline
+
+```
+原始文本 → Tokenizer(encode) → 整数序列 → 随机切片成batch → 模型前向 → logits → cross_entropy loss → backward → optimizer.step
+```
+
+这是所有语言模型训练的骨架，从头实现了每一环。
+
+##### 模型结构（从外到内）
+
+```
+GPT
+├── token_embedding: nn.Embedding(vocab_size, n_embd)
+├── position_embedding: nn.Embedding(block_size, n_embd)
+├── blocks: N × TransformerBlock
+│   ├── ln_1 → MultiHeadAttention → 残差连接
+│   └── ln_2 → FFN → 残差连接
+├── ln_f: 最终 LayerNorm
+└── lm_head: nn.Linear(n_embd, vocab_size, bias=False)
+    └── weight tying: token_embedding.weight = lm_head.weight
+```
+
+##### 关键张量形状流
+
+| 位置 | 张量 | 形状 |
+|------|------|------|
+| 输入 token ids | idx | (B, T) |
+| token embedding | tok_emb | (B, T, n_embd) |
+| position embedding | pos_emb | (T, n_embd) → 广播到 (B, T, n_embd) |
+| 进入 attention 前 | x | (B, T, n_embd) |
+| Q, K, V（合并计算） | c_attn(x) | (B, T, 3×n_embd) |
+| 拆分后 Q/K/V | 各自 | (B, T, n_embd) |
+| reshape 成多头 | q, k, v | (B, n_head, T, head_size) |
+| attention score | q @ k^T | (B, n_head, T, T) |
+| 因果掩码后 | masked_fill(-inf) | (B, n_head, T, T) |
+| attention weight | softmax | (B, n_head, T, T) |
+| attention 输出 | weight @ v | (B, n_head, T, head_size) |
+| 拼接回去 | transpose+view | (B, T, n_embd) |
+| FFN 中间层 | c_fc(x) | (B, T, 4×n_embd) |
+| FFN 输出 | c_proj(gelu(x)) | (B, T, n_embd) |
+| 最终 logits | lm_head(x) | (B, T, vocab_size) |
+| loss 计算时 reshape | logits → (B×T, vocab_size), targets → (B×T,) | |
+
+##### 掌握的核心机制
+
+**Self-Attention 的本质：**
+
+- Q 问"我在找什么"，K 答"我有什么"，V 是"我的内容"
+- score = Q @ K^T / √d_k — 缩放防止梯度消失在 softmax 的饱和区
+- 因果掩码：下三角矩阵，位置 i 只能看到 ≤i，masked_fill(-inf) 后 softmax 变成 0
+
+**多头的意义：**
+
+- 一个大空间拆成多个子空间并行关注不同模式
+- 实现上：一次大矩阵乘法 → reshape → 分头计算 → 拼回来
+
+**Pre-Norm 残差连接：**
+
+```python
+x = x + sublayer(layernorm(x))  # 不是 layernorm(x + sublayer(x))
+```
+
+残差加的是进入子层之前的原始值，保证梯度直通。
+
+**Weight Tying：** embedding 矩阵和 lm_head 共享——语义上，"token → 向量空间"和"向量空间 → token 概率"用同一张映射表。
+
+---
+
+#### Fine-tune 部分：加载预训练权重
+
+##### 理解的关键点
+
+1. **state_dict 的本质：** PyTorch 模型就是一个 key→tensor 的字典。key 由属性名按层级拼接而来（`blocks.0.attn.c_attn.weight`）。加载权重 = 把别人字典里的值拷贝到你的字典里。
+2. **HF 的 Conv1D vs nn.Linear：** 存储方式转置了。Linear 的 weight 是 (out, in)，Conv1D 是 (in, out)。所以 `c_attn.weight`, `c_proj.weight`, `c_fc.weight`, `c_proj.weight` 这四个加载时要 `.t()`。
+3. **register_buffer 的角色：** 因果掩码不是参数，是常量。它出现在 state_dict 里但不需要从预训练模型拷贝（两边内容一样），所以要过滤掉。
+4. **微调策略：** 学习率从 3e-4 降到 1e-5。预训练权重是好的起点，大学习率会破坏它（catastrophic forgetting）。
+5. **Tokenizer 切换：** 从字符级（vocab ~65）切换到 GPT-2 的 BPE（vocab 50257）。模型的 embedding 层维度必须和 tokenizer 的词表大小一致。
+
+---
+
+#### 建立的心智模型
+
+- **训练 = 不断调参数让 loss 下降。** loss 是 cross_entropy，衡量"模型预测的下一个 token 概率分布"和"真实下一个 token"的差距
+- **模型本身只做一件事：** 输入 (B, T) 的 token 序列 → 输出 (B, T, vocab_size) 的logits(softmax归一化后即为概率)
+- **生成 = 反复调用模型，每次取最后一个位置的概率，采样一个 token，拼回去**
+- **所有的"理解"都编码在那些权重矩阵的数值里** ——加载预训练权重后模型立刻能用，就是因为那些数值已经编码了语言知识
 
